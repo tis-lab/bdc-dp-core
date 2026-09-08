@@ -1,9 +1,10 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import { DatasetAccessResult } from "../types/authorization";
 import { checkDatasetAccess } from "../services/authorizationService";
 
 interface AuthorizationContextType {
-  checkDatasetAccess: (datasetIds: string[]) => Promise<DatasetAccessResult[]>;
+  getDatasetAccess: (datasetIds: string[]) => Promise<DatasetAccessResult[]>;
+  datasetAccess: DatasetAccessResult[];
 }
 
 // Context for authorization info
@@ -17,10 +18,23 @@ export const AuthorizationProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const [datasetAccess, setDatasetAccess] = useState<DatasetAccessResult[]>([]);
+
+  const getDatasetAccess = async (
+    datasetIds: string[],
+  ): Promise<DatasetAccessResult[]> => {
+    const results = await checkDatasetAccess(datasetIds);
+
+    setDatasetAccess(results);
+
+    return results;
+  };
+
   return (
     <AuthorizationContext.Provider
       value={{
-        checkDatasetAccess,
+        getDatasetAccess,
+        datasetAccess,
       }}
     >
       {children}
