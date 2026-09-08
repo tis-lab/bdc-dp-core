@@ -7,14 +7,14 @@ function App() {
   const user = mockUser;
 
   return (
-    <ThemeProvider>
-      <UserProvider user={user}>
-        <AuthorizationProvider>
+    <UserProvider user={user}>
+      <AuthorizationProvider>
+        <ThemeProvider>
           {/* <CohortBuilder /> */}
           <h1>Hello</h1>
-        </AuthorizationProvider>
-      </UserProvider>
-    </ThemeProvider>
+        </ThemeProvider>
+      </AuthorizationProvider>
+    </UserProvider>
   );
 }
 
