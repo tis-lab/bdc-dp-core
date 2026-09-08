@@ -14,6 +14,6 @@ export const mockUser: User = {
     country: "US",
   },
   preferences: {
-    theme: "light",
+    theme: "dark",
   },
 };
