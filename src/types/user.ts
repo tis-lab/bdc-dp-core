@@ -10,7 +10,13 @@ interface UserProfile {
   country: string;
 }
 
+interface UserPreferences {
+  theme?: "light" | "dark";
+  // Add other preferences as they are defined
+}
+
 export interface User {
   uuid: string;
   profile: UserProfile;
+  preferences: UserPreferences;
 }

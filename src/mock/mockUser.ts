@@ -13,4 +13,7 @@ export const mockUser: User = {
     postalCode: "00000",
     country: "US",
   },
+  preferences: {
+    theme: "light",
+  },
 };
