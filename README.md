@@ -56,8 +56,8 @@ npm run build
 
 ```bash
 cd link/to/study-palette-ui
-npm install
 yalc add @tis-lab/context-providers
+npm install
 yalc publish
 npm run build
 ```
@@ -66,9 +66,9 @@ npm run build
 
 ```bash
 cd ../framework
-npm install
 yalc add @tis-lab/context-providers
 yalc add @tis-lab/study-palette-ui
+npm install
 npm start
 ```
 
