@@ -58,11 +58,10 @@ npm run build
 cd link/to/study-palette-ui
 yalc add @tis-lab/context-providers
 npm install
-yalc publish
+yalc publish --private
 npm run build
 ```
 
-(npm run build automatically triggers yalc push --private via postbuild).
 
 ```bash
 cd ../framework
