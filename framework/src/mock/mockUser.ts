@@ -1,4 +1,4 @@
-import type { User } from "../types/user";
+import type { User } from "@tis-lab/context-providers";
 
 export const mockUser: User = {
   uuid: "test-user-001",

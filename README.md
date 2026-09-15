@@ -1,16 +1,25 @@
-# bdc-dp-core
+# BDC Data Portal Monorepo Assumption
 
 ## Overview
 
-This application is a React application built with [Create React App](https://create-react-app.dev/) and TypeScript. The application can be run locally using the CRA development server or deployed to OpenShift as static content served by Apache HTTP Server.
+This repository hosts both the Context Providers library and the Core Framework application.
 
-## Prerequisites
+## Project Structure
+
+```text
+.
+├── framework/        # Core Framework App (React + Typescript)
+└── providers/        # Context Providers Library (React + Typescript)
+```
+
+## Global Prerequisites
 
 Make sure the following are installed:
 
 - Node.js 20
 - npm
 - Git
+- Yalc
 
 Check your versions:
 
@@ -19,7 +28,7 @@ node --version
 npm --version
 ```
 
-## Running Locally
+## Quick Start Development Workflow
 
 ### 1. Clone the repository
 
@@ -28,15 +37,37 @@ git clone <repository-url>
 cd <repository-directory>
 ```
 
-### 2. Install dependencies
+Make sure to also clone the Study Palette.
+
+### 2. Build and Publish Providers to Yalc:
+
+From the repository root:
 
 ```bash
+cd providers
 npm install
+yalc publish
+npm run build
 ```
 
-### 3. Start the development server
+(npm run build automatically triggers yalc push --private via postbuild).
+
+### 3. Link Providers to Framework and Study Palette, and Publish Study Palette to Yalc:
 
 ```bash
+cd link/to/study-palette-ui
+yalc add @tis-lab/context-providers
+npm install
+yalc publish --private
+npm run build
+```
+
+
+```bash
+cd ../framework
+yalc add @tis-lab/context-providers
+yalc add @tis-lab/study-palette-ui
+npm install
 npm start
 ```
 
@@ -52,7 +83,7 @@ The development server automatically recompiles the application when source file
 
 After making changes to the application:
 
-1. Test the changes locally:
+1. Test the changes locally with the Core Framework Application:
 
 ```bash
 npm start
@@ -83,24 +114,3 @@ git push
 8. Once the build completes, OpenShift deploys the new image.
 
 9. Open the application's Route to verify the updated version.
-
-## Project Structure
-
-```text
-.
-├── build/              # CRA production build; committed for OpenShift deployment
-├── public/             # Static files used during the CRA build
-├── src/                # React application source
-├── package.json        # Dependencies and npm scripts
-├── package-lock.json   # Locked dependency versions
-└── tsconfig.json       # TypeScript configuration
-```
-
-## Available Commands
-
-| Command         | Description                            |
-| --------------- | -------------------------------------- |
-| `npm install`   | Install project dependencies           |
-| `npm start`     | Start the local CRA development server |
-| `npm run build` | Create a production build in `build/`  |
-| `npm test`      | Run tests                              |
