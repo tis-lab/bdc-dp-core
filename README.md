@@ -16,7 +16,7 @@ This repository hosts both the Context Providers library and the Core Framework 
 
 Make sure the following are installed:
 
-- Node.js 20
+- Node.js 24
 - npm
 - Git
 - Yalc
@@ -55,16 +55,17 @@ npm run build
 ### 3. Link Providers to Framework and Study Palette, and Publish Study Palette to Yalc:
 
 ```bash
-cd link/to/study-palette-ui
-yalc add @tis-lab/context-providers
+cd link/to/study-palette/ui
+yalc add @tis-lab/context-providers --dev
 npm install
 yalc publish --private
 npm run build
+npm run yalc:push
 ```
 
 
 ```bash
-cd ../framework
+cd link/to/bdc-dp-core/framework
 yalc add @tis-lab/context-providers
 yalc add @tis-lab/study-palette-ui
 npm install
