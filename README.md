@@ -103,13 +103,16 @@ Then, in the consuming project:
 
 ```bash
 cd ../framework
-yalc add @tis-lab/context-providers
-npm install
+yalc link @tis-lab/context-providers
 ```
 
-Re-run `npm run build && npm run yalc:push` after each change — the framework
-holds a copied snapshot, not a live symlink, so it keeps serving the previous
-build until you push again.
+Use `yalc link`, not `yalc add`. Both point the framework at your local build,
+but `add` rewrites the dependency in `package.json` to a `file:.yalc/...` path.
+Those paths resolve only on a machine that has run yalc, so committing one
+breaks cloud builds and a fresh clone. `link` leaves `package.json` alone and
+symlinks the package into `node_modules` instead.
+
+Re-run `npm run build && npm run yalc:push` in `providers/` after each change.
 
 To return to the published package:
 
@@ -118,17 +121,19 @@ yalc remove @tis-lab/context-providers
 npm install
 ```
 
-Do not commit the `file:.yalc/...` dependency entries that `yalc add` writes
-into `package.json` and `package-lock.json`. Those paths only resolve on a
-machine that has run yalc, so they break cloud builds.
-
 ## Publishing a new package version
 
 ```bash
 cd providers
-npm version <patch|minor|major>
+npm version <patch|minor|major> --no-git-tag-version
+git tag context-providers-v<new version>
 npm publish
 ```
+
+`npm version` tags the whole repository, not the subdirectory. Without
+`--no-git-tag-version` a bare `v0.1.1` tag would claim the repository root for
+`providers` alone, and collide once `framework` is versioned too; the
+namespaced tag keeps the two apart.
 
 `prepublishOnly` rebuilds the package first, so the published tarball always
 matches current source. Published versions are **immutable** — a version number
