@@ -1,6 +1,6 @@
 {
   "name": "@tis-lab/context-providers",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "",
   "bugs": {
     "url": "https://github.com/tis-lab/bdc-dp-core/issues"
@@ -17,10 +17,14 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "rollup -c",
-    "postbuild": "yalc push --private",
+    "yalc:push": "yalc push --private",
+    "prepublishOnly": "npm run build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
