@@ -1,6 +1,10 @@
-import { AuthorizationProvider } from "./context/authorizationContext";
-import { ThemeProvider } from "./context/themeContext";
-import { UserProvider } from "./context/userContext";
+import {
+  AuthorizationProvider,
+  ThemeProvider,
+  UserProvider,
+} from "@tis-lab/context-providers";
+import { CohortBuilder } from "@tis-lab/study-palette-ui";
+
 import { mockUser } from "./mock/mockUser";
 
 function App() {
@@ -10,7 +14,7 @@ function App() {
     <UserProvider user={user}>
       <AuthorizationProvider>
         <ThemeProvider>
-          {/* <CohortBuilder /> */}
+          <CohortBuilder />
           <h1>Hello</h1>
         </ThemeProvider>
       </AuthorizationProvider>

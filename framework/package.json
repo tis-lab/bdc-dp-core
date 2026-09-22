@@ -1,13 +1,13 @@
 {
-  "name": "bdc-dp-core",
-  "version": "1.0.0",
+  "name": "@tis-lab/bdc-dp-core",
+  "version": "0.0.1",
   "description": "",
   "bugs": {
-    "url": "https://github.com/yn-huang/bdc-dp-core/issues"
+    "url": "https://github.com/tis-lab/bdc-dp-core/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yn-huang/bdc-dp-core.git"
+    "url": "git+https://github.com/tis-lab/bdc-dp-core.git"
   },
   "license": "ISC",
   "author": "",
@@ -21,6 +21,8 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.2.0",
+    "@tis-lab/context-providers": "^0.1.0",
+    "@tis-lab/study-palette-ui": "^0.1.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-scripts": "^5.0.1"

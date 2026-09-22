@@ -1,4 +1,4 @@
-interface UserProfile {
+export interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
@@ -10,7 +10,7 @@ interface UserProfile {
   country: string;
 }
 
-interface UserPreferences {
+export interface UserPreferences {
   theme?: "light" | "dark";
   // Add other preferences as they are defined
 }

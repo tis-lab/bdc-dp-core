@@ -4,7 +4,7 @@ import {
   ThemeProvider as MuiThemeProvider,
   createTheme,
 } from "@mui/material/styles";
-import { useUserContext } from "./userContext";
+import { useUserContext } from "../context/userContext";
 
 export interface ThemeProviderProps {
   children?: React.ReactNode;
