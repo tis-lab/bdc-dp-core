@@ -27,8 +27,13 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          # Writes a temporary .npmrc on the runner only; your committed .npmrc is untouched
+          registry-url: https://npm.pkg.github.com
+          scope: "@tis-lab"
  
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
       - run: npm run lint --if-present
       - run: npm test --if-present
       - run: npm run build
