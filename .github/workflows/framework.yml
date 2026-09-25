@@ -1,4 +1,4 @@
-name: CICD
+name: framework
 
 on:
   push:
@@ -24,13 +24,17 @@ jobs:
     permissions:
       contents: read
       packages: read
+    defaults:
+      run:
+        working-directory: framework
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
+          cache-dependency-path: framework/package-lock.json
 
           registry-url: https://npm.pkg.github.com
           scope: "@tis-lab"
