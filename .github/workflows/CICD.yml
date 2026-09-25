@@ -1,0 +1,198 @@
+name: CICD
+
+on:
+  push:
+    branches: [main] # main: build, test, smoke test, deploy to OpenShift
+    paths-ignore:
+      - "framework/build/**" # skip the build commits this workflow makes on main
+  pull_request: # PRs into any branch: build, test, smoke test, Netlify preview
+  workflow_dispatch:
+
+env:
+  BUILD_OUTPUT: framework/build # where `npm run build` puts its output (relative to repo root)
+  TARGET_DIR: framework/build # the directory the OpenShift httpd build serves
+  HTTPD_IMAGE: registry.access.redhat.com/rhscl/httpd-24-rhel7 # matches openshift/httpd:2.4-el7 in the BuildConfig
+
+# On feature branches a newer push cancels the older run; on main runs queue instead
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+          registry-url: https://npm.pkg.github.com
+          scope: "@tis-lab"
+
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
+
+      - run: npm run lint --if-present
+      - run: npm test --if-present
+      - run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: ${{ env.BUILD_OUTPUT }}
+          retention-days: 7
+
+  smoke-test:
+    # Builds the output into an httpd image the same way OpenShift's S2I build does, then checks if it serves
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: site
+
+      - name: Build httpd image with the S2I scripts
+        run: |
+          cat > Dockerfile <<DOCKERFILE
+          FROM ${HTTPD_IMAGE}
+          USER 0
+          COPY site/ /tmp/src/
+          RUN chown -R 1001:0 /tmp/src
+          USER 1001
+          RUN /usr/libexec/s2i/assemble
+          CMD /usr/libexec/s2i/run
+          DOCKERFILE
+          docker build -t smoke-test .
+
+      - name: Run it and check if it serves the app
+        run: |
+          docker run -d --name site -p 8080:8080 smoke-test
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:8080/; then break; fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8080/ -o index.html || { docker logs site; exit 1; }
+          grep -qi "<html" index.html || { echo "::error::/ did not return HTML"; docker logs site; exit 1; }
+          echo "Apache served the build successfully."
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs site || true
+
+  publish-and-deploy:
+    needs: [build, smoke-test]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' # only main deploys
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: ${{ runner.temp }}/new-build
+
+      - name: Replace build directory
+        run: |
+          mkdir -p "${TARGET_DIR}"
+          rsync -a --delete "${RUNNER_TEMP}/new-build/" "${TARGET_DIR}/"
+
+      - name: Commit and push
+        id: push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A "${TARGET_DIR}"
+          if git diff --cached --quiet; then
+            echo "Build output unchanged, nothing to deploy."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "Update ${TARGET_DIR} from ${GITHUB_SHA::7} [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"   # in case main moved during the build
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger OpenShift httpd build
+        if: steps.push.outputs.changed == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.OPENSHIFT_WEBHOOK_URL }}
+          BUILD_SHA: ${{ steps.push.outputs.sha }}
+        run: |
+          payload=$(cat <<JSON
+          {
+            "git": {
+              "uri": "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git",
+              "ref": "${GITHUB_REF_NAME}",
+              "commit": "${BUILD_SHA}",
+              "message": "Build from ${GITHUB_SHA::7}"
+            }
+          }
+          JSON
+          )
+          status=$(curl -sS -o response.txt -w '%{http_code}' -X POST \
+            -H "Content-Type: application/json" --data "$payload" "$WEBHOOK_URL")
+          cat response.txt; echo
+          if [ "$status" -ge 300 ]; then
+            echo "::error::Webhook call failed with HTTP $status"
+            exit 1
+          fi
+          echo "OpenShift build triggered for commit ${BUILD_SHA::7}."
+
+  netlify-preview:
+    needs: [build, smoke-test]
+    # PRs only; secrets aren't available to PRs from forks, so skip those
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: site
+
+      - name: Deploy preview to Netlify
+        id: deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npx --yes netlify-cli deploy \
+            --dir=site \
+            --alias="pr-${{ github.event.pull_request.number }}" \
+            --message="PR #${{ github.event.pull_request.number }} @ ${GITHUB_SHA::7}" \
+            --json > deploy.json
+          echo "url=$(jq -r '.deploy_url' deploy.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview link on PR
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- netlify-preview -->';
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const body = `${marker}\n🔍 **Preview:** ${process.env.PREVIEW_URL}\n\nBuilt from ${sha}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
