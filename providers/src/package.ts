@@ -10,3 +10,11 @@ export type { User, UserProfile, UserPreferences } from "./types/user";
 export type { DatasetAccessResult } from "./types/authorization";
 
 export { DataPortalProvider } from "./providers/DataPortalProvider";
+
+export { default as FancyButton } from "./shared-components/FancyButton";
+export type {
+  FancyButtonProps,
+  FancyButtonAppearance,
+  FancyButtonSize,
+  FancyButtonColor,
+} from "./shared-components/FancyButton";
