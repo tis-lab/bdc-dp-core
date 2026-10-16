@@ -1,5 +1,9 @@
 // this file serves as the entry point for package
-export { useUserContext, UserProvider } from "./context/userContext";
+export {
+  useUserContext,
+  UserProvider,
+  type UserContextType,
+} from "./context/userContext";
 export {
   useAuthorizationContext,
   AuthorizationProvider,

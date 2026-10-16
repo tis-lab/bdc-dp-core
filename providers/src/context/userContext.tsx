@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { User, UserPreferences } from "../types/user";
 
-interface UserContextType {
+export interface UserContextType {
   user: User | null;
   isAuthenticated: boolean;
   /** Ask the owner of the session to change preferences. No-op if the owner didn't provide a handler. */
